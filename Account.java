@@ -3,14 +3,15 @@ public class Account {
     private int transactionsMade;
     private int id;
 
-    public void Account(int ind, double balance, int transactionsMade) {
+    public Account(int ind, double balance, int transactionsMade) {
         this.transactionsMade = transactionsMade;
         this.id = id;
         this.balance = balance;
     }
-
-    public void Account(int id) {
-        Account(id, 1000, 0);
+    public  Account(int id) {
+        this.transactionsMade = 0;
+        this.id = id;
+        this.balance = 1000;
     }
 
     public synchronized void addBalance(double add) {
@@ -27,7 +28,7 @@ public class Account {
     }
 
     public synchronized void withdraw(double amount) {
-        assert amount <= balance;
+        //if (!(amount <= balance)) throw new AssertionError();
         balance -= amount;
         transactionsMade++;
     }
