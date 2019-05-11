@@ -21,34 +21,42 @@ public class Cracker {
 			}
 
 		}else if(args.length == 3 ){
-			String hash = "9a7b006d203b362c8cef6da001685678fc1d463a";// args[0];
-			int maxSize = 3;//Integer.parseInt(args[1]);
-			int workers = 38;//Integer.min(40 , Integer.parseInt(args[2]));
-			try {
-				hash = args[0];
-				maxSize = Integer.parseInt(args[1]);
-				workers = Integer.min(40, Integer.parseInt(args[2]));
-			}catch (Exception e ){
-
-			}
-			int soloWork = CHARS.length/workers;
-			CountDownLatch cd = new CountDownLatch(workers);
-			System.out.println("starting  searching ....................");
-			for(int i = 0 ; i<workers ; i++){
-				Hacker h = new Hacker(i*soloWork ,
-								i==workers-1 ?CHARS.length:soloWork ,maxSize , hash , cd);
-				h.start();
-			}
-			try {
-				cd.await();
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-			System.out.println("ended searching");
-
+			hack(args);
+		}else{
+			System.out.println("please give 1 string to encode or 1 hash and 2 ints to hack");
 		}
 
 	}
+
+
+	private static void hack(String[] args){
+		String hash = "9a7b006d203b362c8cef6da001685678fc1d463a";// args[0];
+		int maxSize = 3;//Integer.parseInt(args[1]);
+		int workers = 40;//Integer.min(40 , Integer.parseInt(args[2]));
+		try {
+			hash = args[0];
+			maxSize = Integer.parseInt(args[1]);
+			workers = Integer.min(CHARS.length, Integer.parseInt(args[2]));
+		}catch (Exception e ){
+
+		}
+		int soloWork = CHARS.length/workers;
+		CountDownLatch cd = new CountDownLatch(workers);
+		System.out.println("starting  searching ....................");
+		for(int i = 0 ; i<workers ; i++){
+			Hacker h = new Hacker(i*soloWork ,
+					i==workers-1 ?CHARS.length:soloWork ,maxSize , hash , cd);
+			h.start();
+		}
+		try {
+			cd.await();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		System.out.println("ended searching");
+	}
+
+
 	private static class Hacker extends Thread {
 		private  int start;
 		private int soloWork;
@@ -66,6 +74,11 @@ public class Cracker {
 
 		@Override
 		public void run() {
+			try {
+				md = MessageDigest.getInstance("SHA");
+			} catch (NoSuchAlgorithmException e) {
+				e.printStackTrace();
+			}
 			for(int i = start ; i<Integer.min(start+soloWork , CHARS.length) ; i++)
 				rec(String.valueOf(CHARS[i]));
 			cd.countDown();
@@ -73,15 +86,8 @@ public class Cracker {
 
 		private void rec(String str) {
 			if(str.length()>length)return ;
-
-			try {
-				md = MessageDigest.getInstance("SHA");
-			} catch (NoSuchAlgorithmException e) {
-				e.printStackTrace();
-			}
 			md.update(str.getBytes());
-			String current = Cracker.hexToString(md.digest());
-			if(current.equals(hash))
+			if(Cracker.hexToString(md.digest()).equals(hash))
 				System.out.println(str);
 			for(int i = 0 ; i<CHARS.length ; i++)
 				rec(str+CHARS[i]);
