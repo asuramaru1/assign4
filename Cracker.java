@@ -1,6 +1,93 @@
+import javax.swing.plaf.synth.SynthScrollBarUI;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.concurrent.CountDownLatch;
+
+import static java.security.MessageDigest.*;
+
 public class Cracker {
 	// Array of chars used to produce strings
-	public static final char[] CHARS = "abcdefghijklmnopqrstuvwxyz0123456789.,-!".toCharArray();	
+	public static final char[] CHARS = "abcdefghijklmnopqrstuvwxyz0123456789.,-!".toCharArray();
+
+	public static void main(String[] args) {
+		if (args.length == 1) {
+			String toHash = "!!!";
+			try {
+				MessageDigest md = MessageDigest.getInstance("SHA");
+				md.update(toHash.getBytes());
+				System.out.println(Cracker.hexToString(md.digest()));
+			} catch (NoSuchAlgorithmException e) {
+				e.printStackTrace();
+			}
+
+		}else if(args.length == 3 ){
+			String hash = "9a7b006d203b362c8cef6da001685678fc1d463a";// args[0];
+			int maxSize = 3;//Integer.parseInt(args[1]);
+			int workers = 38;//Integer.min(40 , Integer.parseInt(args[2]));
+			try {
+				hash = args[0];
+				maxSize = Integer.parseInt(args[1]);
+				workers = Integer.min(40, Integer.parseInt(args[2]));
+			}catch (Exception e ){
+
+			}
+			int soloWork = CHARS.length/workers;
+			CountDownLatch cd = new CountDownLatch(workers);
+			System.out.println("starting  searching ....................");
+			for(int i = 0 ; i<workers ; i++){
+				Hacker h = new Hacker(i*soloWork ,
+								i==workers-1 ?CHARS.length:soloWork ,maxSize , hash , cd);
+				h.start();
+			}
+			try {
+				cd.await();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+			System.out.println("ended searching");
+
+		}
+
+	}
+	private static class Hacker extends Thread {
+		private  int start;
+		private int soloWork;
+		private   int length ;
+		private  CountDownLatch cd ;
+		private  String hash;
+		private MessageDigest md = null;
+		public Hacker(int start, int soloWork, int length, String hash , CountDownLatch cd) {
+			this.start = start ;
+			this.soloWork = soloWork;
+			this.length = length;
+			this.hash = hash;
+			this.cd = cd ;
+		}
+
+		@Override
+		public void run() {
+			for(int i = start ; i<Integer.min(start+soloWork , CHARS.length) ; i++)
+				rec(String.valueOf(CHARS[i]));
+			cd.countDown();
+		}
+
+		private void rec(String str) {
+			if(str.length()>length)return ;
+
+			try {
+				md = MessageDigest.getInstance("SHA");
+			} catch (NoSuchAlgorithmException e) {
+				e.printStackTrace();
+			}
+			md.update(str.getBytes());
+			String current = Cracker.hexToString(md.digest());
+			if(current.equals(hash))
+				System.out.println(str);
+			for(int i = 0 ; i<CHARS.length ; i++)
+				rec(str+CHARS[i]);
+
+		}
+	}
 	
 	/*
 	 Given a byte[] array, produces a hex String,
@@ -24,6 +111,9 @@ public class Cracker {
 	 for each 2 chars.
 	 (provided code)
 	*/
+
+
+
 	public static byte[] hexToArray(String hex) {
 		byte[] result = new byte[hex.length()/2];
 		for (int i=0; i<hex.length(); i+=2) {
@@ -31,7 +121,9 @@ public class Cracker {
 		}
 		return result;
 	}
-	
+
+
+
 	// possible test values:
 	// a 86f7e437faa5a7fce15d1ddcb9eaeaea377667b8
 	// fm adeb6f2a18fe33af368d91b09587b68e3abcb9a7

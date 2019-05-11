@@ -60,8 +60,6 @@ public class Bank {
     }
 
 
-
-
     public void stopWorking() {
         try {
             latch.await();
